@@ -24,7 +24,10 @@ class MyApp extends StatelessWidget {
       home: DataListPage(
         title: 'Product Inventory',
         subtitle: 'Product Inventory',
-        wrapper: Wrapper(total: db.length, data: db.take(10).toList()),
+        wrapper: Future(() async {
+          await Future.delayed(const Duration(seconds: 2));
+          return Wrapper(total: db.length, data: db.take(10).toList());
+        }),
         showMore: (wrapper) => Future<Wrapper>(() async {
           await Future.delayed(const Duration(seconds: 2));
           return Wrapper(

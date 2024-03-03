@@ -2,13 +2,14 @@ library devaloop_data_list_page;
 
 import 'package:flutter/material.dart';
 
-class DataListPage extends StatefulWidget {
+class DataListPage extends StatelessWidget {
   final String title;
   final String subtitle;
-  final Wrapper wrapper;
+  final Future<Wrapper> wrapper;
   final void Function()? add;
   final void Function()? search;
-  final void Function()? refresh;
+  final Future<Wrapper> Function(Wrapper wrapper)?
+      refresh; //TODO Implement Refresh
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
   const DataListPage(
@@ -22,10 +23,65 @@ class DataListPage extends StatefulWidget {
       this.showMore});
 
   @override
-  State<DataListPage> createState() => _DataListPageState();
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+        future: wrapper,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting ||
+              snapshot.hasError) {
+            return Scaffold(
+              appBar: AppBar(
+                title: ListTile(
+                  title: Text(
+                    title,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    subtitle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              body: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          } else {
+            return DataListPageShow(
+              title: title,
+              subtitle: subtitle,
+              wrapper: snapshot.data!,
+              showMore: showMore,
+            );
+          }
+        });
+  }
 }
 
-class _DataListPageState extends State<DataListPage> {
+class DataListPageShow extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final Wrapper wrapper;
+  final void Function()? add;
+  final void Function()? search;
+  final void Function()? refresh;
+  final Future<Wrapper> Function(Wrapper wrapper)? showMore;
+
+  const DataListPageShow(
+      {super.key,
+      required this.title,
+      required this.subtitle,
+      required this.wrapper,
+      this.add,
+      this.search,
+      this.refresh,
+      this.showMore});
+
+  @override
+  State<DataListPageShow> createState() => _DataListPageShowState();
+}
+
+class _DataListPageShowState extends State<DataListPageShow> {
   late Wrapper _wrapper;
   late bool _isShowingMore;
 
