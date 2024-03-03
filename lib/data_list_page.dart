@@ -3,56 +3,66 @@ library devaloop_data_list_page;
 import 'package:flutter/material.dart';
 
 class DataListPage extends StatefulWidget {
-  final void Function()? onAdd;
-  final void Function()? onSearch;
+  final String title;
+  final String subtitle;
+  final Wrapper wrapper;
+  final void Function()? add;
+  final void Function()? search;
+  final void Function()? refresh;
+  final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
-  const DataListPage({super.key, this.onAdd, this.onSearch});
+  const DataListPage(
+      {super.key,
+      required this.title,
+      required this.subtitle,
+      required this.wrapper,
+      this.add,
+      this.search,
+      this.refresh,
+      this.showMore});
 
   @override
   State<DataListPage> createState() => _DataListPageState();
 }
 
 class _DataListPageState extends State<DataListPage> {
-  final List<DataItem> db = List.generate(
-      25,
-      (index) =>
-          DataItem(title: 'Data ${index + 1}', subtitle: 'Data ${index + 1}'));
   late Wrapper _wrapper;
+  late bool _isShowingMore;
 
   @override
   void initState() {
     super.initState();
-    _wrapper =
-        Wrapper(total: db.length, showed: 10, data: db.take(10).toList());
+    _isShowingMore = false;
+    _wrapper = widget.wrapper;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const ListTile(
+        title: ListTile(
           title: Text(
-            'Product Inventory',
+            widget.title,
             overflow: TextOverflow.ellipsis,
           ),
           subtitle: Text(
-            'Product Inventory',
+            widget.subtitle,
             overflow: TextOverflow.ellipsis,
           ),
         ),
         actions: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 7.5),
-            child: Text('10 of 200'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 7.5),
+            child: Text('${_wrapper.data.length} of ${_wrapper.total}'),
           ),
-          if (widget.onSearch != null)
+          if (widget.search != null)
             IconButton(
-              onPressed: widget.onSearch,
+              onPressed: widget.search,
               icon: const Icon(Icons.search),
             ),
-          if (widget.onAdd != null)
+          if (widget.add != null)
             IconButton(
-              onPressed: widget.onAdd,
+              onPressed: widget.add,
               icon: const Icon(Icons.add),
             ),
         ],
@@ -67,16 +77,30 @@ class _DataListPageState extends State<DataListPage> {
             ? Padding(
                 padding: const EdgeInsets.all(15),
                 child: Center(
-                  child: TextButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        var data = db.take(_wrapper.data.length + 10).toList();
-                        _wrapper = Wrapper(
-                            total: db.length, showed: data.length, data: data);
-                      });
-                    },
-                    icon: const Icon(Icons.arrow_circle_down),
-                    label: const Text('SHOW MORE (190)'),
+                  child: FilledButton.icon(
+                    onPressed: _isShowingMore
+                        ? null
+                        : () async {
+                            setState(() {
+                              _isShowingMore = true;
+                            });
+                            _wrapper = await widget.showMore!.call(_wrapper);
+                            setState(() {
+                              _isShowingMore = false;
+                            });
+                          },
+                    icon: _isShowingMore
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.grey,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Icon(Icons.arrow_circle_down),
+                    label: Text(
+                        'SHOW MORE (${_wrapper.total - _wrapper.data.length})'),
                   ),
                 ),
               )
@@ -99,10 +123,9 @@ class _DataListPageState extends State<DataListPage> {
 
 class Wrapper {
   final int total;
-  final int showed;
   final List<DataItem> data;
 
-  Wrapper({required this.total, required this.showed, required this.data});
+  Wrapper({required this.total, required this.data});
 }
 
 class DataItem {
