@@ -8,8 +8,7 @@ class DataListPage extends StatelessWidget {
   final Future<Wrapper> wrapper;
   final void Function()? add;
   final void Function()? search;
-  final Future<Wrapper> Function(Wrapper wrapper)?
-      refresh; //TODO Implement Refresh
+  final Future<Wrapper>? refresh;
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
   const DataListPage(
@@ -52,6 +51,7 @@ class DataListPage extends StatelessWidget {
               subtitle: subtitle,
               wrapper: snapshot.data!,
               showMore: showMore,
+              refresh: refresh,
             );
           }
         });
@@ -64,7 +64,7 @@ class DataListPageShow extends StatefulWidget {
   final Wrapper wrapper;
   final void Function()? add;
   final void Function()? search;
-  final void Function()? refresh;
+  final Future<Wrapper>? refresh;
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
   const DataListPageShow(
@@ -84,11 +84,13 @@ class DataListPageShow extends StatefulWidget {
 class _DataListPageShowState extends State<DataListPageShow> {
   late Wrapper _wrapper;
   late bool _isShowingMore;
+  late bool _isRefreshing;
 
   @override
   void initState() {
     super.initState();
     _isShowingMore = false;
+    _isRefreshing = false;
     _wrapper = widget.wrapper;
   }
 
@@ -120,6 +122,30 @@ class _DataListPageShowState extends State<DataListPageShow> {
             IconButton(
               onPressed: widget.add,
               icon: const Icon(Icons.add),
+            ),
+          if (widget.refresh != null)
+            IconButton(
+              onPressed: _isRefreshing
+                  ? null
+                  : () async {
+                      setState(() {
+                        _isRefreshing = true;
+                      });
+                      _wrapper = await widget.refresh!;
+                      setState(() {
+                        _isRefreshing = false;
+                      });
+                    },
+              icon: _isRefreshing
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        color: Colors.grey,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : const Icon(Icons.refresh),
             ),
         ],
       ),

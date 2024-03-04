@@ -17,6 +17,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -33,6 +34,10 @@ class MyApp extends StatelessWidget {
           return Wrapper(
               total: db.length,
               data: db.take(wrapper.data.length + 10).toList());
+        }),
+        refresh: Future(() async {
+          await Future.delayed(const Duration(seconds: 10));
+          return Wrapper(total: db.length, data: db.take(10).toList());
         }),
       ),
     );
