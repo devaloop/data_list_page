@@ -42,6 +42,7 @@ class MyApp extends StatelessWidget {
         search: Future(() async {
           await Future.delayed(const Duration(seconds: 10));
           return SearchWrapper(
+            searchKeyWord: 'Data 1',
             searchResult: Wrapper(total: 20, data: db.take(10).toList()),
             showSearchResultMore: (wrapper) =>
                 Future(() => Wrapper(total: 20, data: db.take(20).toList())),

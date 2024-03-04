@@ -194,61 +194,78 @@ class _DataListPageShowState extends State<DataListPageShow> {
             ),
         ],
       ),
-      body: ListView.separated(
-        itemBuilder: (context, index) => _wrapper.data.length !=
-                    _wrapper.total &&
-                index ==
-                    (_wrapper.data.length +
-                        (_wrapper.data.length != _wrapper.total ? 1 : 0) -
-                        1)
-            ? Padding(
-                padding: const EdgeInsets.all(15),
-                child: Center(
-                  child: FilledButton.icon(
-                    onPressed: _isShowingMore
-                        ? null
-                        : () async {
-                            setState(() {
-                              _isShowingMore = true;
-                            });
-                            if (_searchWrapper != null) {
-                              _wrapper = await _searchWrapper!
-                                  .showSearchResultMore!
-                                  .call(_wrapper);
-                            } else {
-                              _wrapper = await widget.showMore!.call(_wrapper);
-                            }
-                            setState(() {
-                              _isShowingMore = false;
-                            });
-                          },
-                    icon: _isShowingMore
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(
-                              color: Colors.grey,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Icon(Icons.arrow_circle_down),
-                    label: Text(
-                        'SHOW MORE (${_wrapper.total - _wrapper.data.length})'),
-                  ),
-                ),
-              )
-            : Card(
-                child: ListTile(
-                  leading: const Icon(Icons.more_vert),
-                  title: Text(_wrapper.data[index].title),
-                  subtitle: Text(_wrapper.data[index].subtitle),
-                ),
+      body: Column(
+        children: [
+          if (_searchWrapper != null)
+            ListTile(
+              title: const Text('Search Keyword'),
+              subtitle: Text(_searchWrapper!.searchKeyWord),
+              trailing: IconButton(
+                  onPressed: () {
+                    //TODO Implement Clear Search
+                  },
+                  icon: const Icon(Icons.clear)),
+            ),
+          Flexible(
+            child: ListView.separated(
+              itemBuilder: (context, index) => _wrapper.data.length !=
+                          _wrapper.total &&
+                      index ==
+                          (_wrapper.data.length +
+                              (_wrapper.data.length != _wrapper.total ? 1 : 0) -
+                              1)
+                  ? Padding(
+                      padding: const EdgeInsets.all(15),
+                      child: Center(
+                        child: FilledButton.icon(
+                          onPressed: _isShowingMore
+                              ? null
+                              : () async {
+                                  setState(() {
+                                    _isShowingMore = true;
+                                  });
+                                  if (_searchWrapper != null) {
+                                    _wrapper = await _searchWrapper!
+                                        .showSearchResultMore!
+                                        .call(_wrapper);
+                                  } else {
+                                    _wrapper =
+                                        await widget.showMore!.call(_wrapper);
+                                  }
+                                  setState(() {
+                                    _isShowingMore = false;
+                                  });
+                                },
+                          icon: _isShowingMore
+                              ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.grey,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Icon(Icons.arrow_circle_down),
+                          label: Text(
+                              'SHOW MORE (${_wrapper.total - _wrapper.data.length})'),
+                        ),
+                      ),
+                    )
+                  : Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.more_vert),
+                        title: Text(_wrapper.data[index].title),
+                        subtitle: Text(_wrapper.data[index].subtitle),
+                      ),
+                    ),
+              separatorBuilder: (context, index) => const SizedBox(
+                height: 7.5,
               ),
-        separatorBuilder: (context, index) => const SizedBox(
-          height: 7.5,
-        ),
-        itemCount: _wrapper.data.length +
-            (_wrapper.data.length != _wrapper.total ? 1 : 0),
+              itemCount: _wrapper.data.length +
+                  (_wrapper.data.length != _wrapper.total ? 1 : 0),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -262,11 +279,14 @@ class Wrapper {
 }
 
 class SearchWrapper {
+  final String searchKeyWord;
   final Wrapper searchResult;
   Future<Wrapper> Function(Wrapper wrapper)? showSearchResultMore;
 
   SearchWrapper(
-      {required this.searchResult, required this.showSearchResultMore});
+      {required this.searchKeyWord,
+      required this.searchResult,
+      required this.showSearchResultMore});
 }
 
 class DataItem {
