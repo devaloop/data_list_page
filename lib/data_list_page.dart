@@ -6,8 +6,8 @@ class DataListPage extends StatelessWidget {
   final String title;
   final String subtitle;
   final Future<Wrapper> wrapper;
-  final void Function()? add;
-  final void Function()? search;
+  final Future<Wrapper>? add;
+  final Future<SearchWrapper>? search;
   final Future<Wrapper>? refresh;
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
@@ -52,6 +52,8 @@ class DataListPage extends StatelessWidget {
               wrapper: snapshot.data!,
               showMore: showMore,
               refresh: refresh,
+              add: add,
+              search: search,
             );
           }
         });
@@ -62,8 +64,8 @@ class DataListPageShow extends StatefulWidget {
   final String title;
   final String subtitle;
   final Wrapper wrapper;
-  final void Function()? add;
-  final void Function()? search;
+  final Future<Wrapper>? add;
+  final Future<SearchWrapper>? search;
   final Future<Wrapper>? refresh;
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
@@ -83,14 +85,19 @@ class DataListPageShow extends StatefulWidget {
 
 class _DataListPageShowState extends State<DataListPageShow> {
   late Wrapper _wrapper;
+  SearchWrapper? _searchWrapper;
   late bool _isShowingMore;
   late bool _isRefreshing;
+  late bool _isSearchring;
+  late bool _isAdding;
 
   @override
   void initState() {
     super.initState();
     _isShowingMore = false;
     _isRefreshing = false;
+    _isSearchring = false;
+    _isAdding = false;
     _wrapper = widget.wrapper;
   }
 
@@ -113,16 +120,6 @@ class _DataListPageShowState extends State<DataListPageShow> {
             padding: const EdgeInsets.symmetric(horizontal: 7.5),
             child: Text('${_wrapper.data.length} of ${_wrapper.total}'),
           ),
-          if (widget.search != null)
-            IconButton(
-              onPressed: widget.search,
-              icon: const Icon(Icons.search),
-            ),
-          if (widget.add != null)
-            IconButton(
-              onPressed: widget.add,
-              icon: const Icon(Icons.add),
-            ),
           if (widget.refresh != null)
             IconButton(
               onPressed: _isRefreshing
@@ -132,6 +129,7 @@ class _DataListPageShowState extends State<DataListPageShow> {
                         _isRefreshing = true;
                       });
                       _wrapper = await widget.refresh!;
+                      _searchWrapper = null;
                       setState(() {
                         _isRefreshing = false;
                       });
@@ -146,6 +144,53 @@ class _DataListPageShowState extends State<DataListPageShow> {
                       ),
                     )
                   : const Icon(Icons.refresh),
+            ),
+          if (widget.search != null)
+            IconButton(
+              onPressed: () async {
+                setState(() {
+                  _isSearchring = true;
+                });
+                _searchWrapper = await widget.search!;
+                _wrapper = _searchWrapper!.searchResult;
+                setState(() {
+                  _isSearchring = false;
+                });
+              },
+              icon: _isSearchring
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        color: Colors.grey,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : _searchWrapper != null
+                      ? const Icon(Icons.search_off)
+                      : const Icon(Icons.search),
+            ),
+          if (widget.add != null)
+            IconButton(
+              onPressed: () async {
+                setState(() {
+                  _isAdding = true;
+                });
+                _wrapper = await widget.add!;
+                setState(() {
+                  _isAdding = false;
+                });
+              },
+              icon: _isAdding
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        color: Colors.grey,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : const Icon(Icons.add),
             ),
         ],
       ),
@@ -166,7 +211,13 @@ class _DataListPageShowState extends State<DataListPageShow> {
                             setState(() {
                               _isShowingMore = true;
                             });
-                            _wrapper = await widget.showMore!.call(_wrapper);
+                            if (_searchWrapper != null) {
+                              _wrapper = await _searchWrapper!
+                                  .showSearchResultMore!
+                                  .call(_wrapper);
+                            } else {
+                              _wrapper = await widget.showMore!.call(_wrapper);
+                            }
                             setState(() {
                               _isShowingMore = false;
                             });
@@ -208,6 +259,14 @@ class Wrapper {
   final List<DataItem> data;
 
   Wrapper({required this.total, required this.data});
+}
+
+class SearchWrapper {
+  final Wrapper searchResult;
+  Future<Wrapper> Function(Wrapper wrapper)? showSearchResultMore;
+
+  SearchWrapper(
+      {required this.searchResult, required this.showSearchResultMore});
 }
 
 class DataItem {

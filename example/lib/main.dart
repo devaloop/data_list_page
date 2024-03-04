@@ -35,6 +35,18 @@ class MyApp extends StatelessWidget {
               total: db.length,
               data: db.take(wrapper.data.length + 10).toList());
         }),
+        add: Future(() async {
+          await Future.delayed(const Duration(seconds: 10));
+          return Wrapper(total: db.length, data: db.take(10).toList());
+        }),
+        search: Future(() async {
+          await Future.delayed(const Duration(seconds: 10));
+          return SearchWrapper(
+            searchResult: Wrapper(total: 20, data: db.take(10).toList()),
+            showSearchResultMore: (wrapper) =>
+                Future(() => Wrapper(total: 20, data: db.take(20).toList())),
+          );
+        }),
         refresh: Future(() async {
           await Future.delayed(const Duration(seconds: 10));
           return Wrapper(total: db.length, data: db.take(10).toList());
