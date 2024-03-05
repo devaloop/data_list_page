@@ -7,7 +7,7 @@ class DataListPage extends StatelessWidget {
   final String subtitle;
   final Future<Wrapper> wrapper;
   final Future<Wrapper>? add;
-  final Future<SearchWrapper>? search;
+  final Future<MapEntry<List<KeyWord>, SearchWrapper>>? search;
   final Future<Wrapper>? refresh;
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
@@ -65,7 +65,7 @@ class DataListPageShow extends StatefulWidget {
   final String subtitle;
   final Wrapper wrapper;
   final Future<Wrapper>? add;
-  final Future<SearchWrapper>? search;
+  final Future<MapEntry<List<KeyWord>, SearchWrapper>>? search;
   final Future<Wrapper>? refresh;
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
@@ -86,10 +86,12 @@ class DataListPageShow extends StatefulWidget {
 class _DataListPageShowState extends State<DataListPageShow> {
   late Wrapper _wrapper;
   SearchWrapper? _searchWrapper;
+  late List<KeyWord> _searchKeyWord;
   late bool _isShowingMore;
   late bool _isRefreshing;
   late bool _isSearchring;
   late bool _isAdding;
+  late bool _isSearchClearing;
 
   @override
   void initState() {
@@ -98,6 +100,8 @@ class _DataListPageShowState extends State<DataListPageShow> {
     _isRefreshing = false;
     _isSearchring = false;
     _isAdding = false;
+    _isSearchClearing = false;
+    _searchKeyWord = [];
     _wrapper = widget.wrapper;
   }
 
@@ -130,6 +134,7 @@ class _DataListPageShowState extends State<DataListPageShow> {
                       });
                       _wrapper = await widget.refresh!;
                       _searchWrapper = null;
+                      _searchKeyWord = [];
                       setState(() {
                         _isRefreshing = false;
                       });
@@ -151,7 +156,9 @@ class _DataListPageShowState extends State<DataListPageShow> {
                 setState(() {
                   _isSearchring = true;
                 });
-                _searchWrapper = await widget.search!;
+                var search = await widget.search!;
+                _searchWrapper = search.value;
+                _searchKeyWord = search.key;
                 _wrapper = _searchWrapper!.searchResult;
                 setState(() {
                   _isSearchring = false;
@@ -199,12 +206,30 @@ class _DataListPageShowState extends State<DataListPageShow> {
           if (_searchWrapper != null)
             ListTile(
               title: const Text('Search Keyword'),
-              subtitle: Text(_searchWrapper!.searchKeyWord),
+              subtitle: Text(
+                  _searchKeyWord.map((e) => e.toString()).toList().join(" • ")),
               trailing: IconButton(
-                  onPressed: () {
-                    //TODO Implement Clear Search
+                  onPressed: () async {
+                    setState(() {
+                      _isSearchClearing = true;
+                    });
+                    _wrapper = await widget.refresh!;
+                    _searchWrapper = null;
+                    _searchKeyWord = [];
+                    setState(() {
+                      _isSearchClearing = false;
+                    });
                   },
-                  icon: const Icon(Icons.clear)),
+                  icon: _isSearchClearing
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.grey,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Icon(Icons.clear)),
             ),
           Flexible(
             child: ListView.separated(
@@ -225,9 +250,11 @@ class _DataListPageShowState extends State<DataListPageShow> {
                                     _isShowingMore = true;
                                   });
                                   if (_searchWrapper != null) {
-                                    _wrapper = await _searchWrapper!
+                                    var searchWrapper = await _searchWrapper!
                                         .showSearchResultMore!
-                                        .call(_wrapper);
+                                        .call(_wrapper, _searchKeyWord);
+                                    _wrapper = searchWrapper.value;
+                                    _searchKeyWord = searchWrapper.key;
                                   } else {
                                     _wrapper =
                                         await widget.showMore!.call(_wrapper);
@@ -279,14 +306,12 @@ class Wrapper {
 }
 
 class SearchWrapper {
-  final String searchKeyWord;
   final Wrapper searchResult;
-  Future<Wrapper> Function(Wrapper wrapper)? showSearchResultMore;
+  Future<MapEntry<List<KeyWord>, Wrapper>> Function(
+      Wrapper wrapper, List<KeyWord> searchKeyWord)? showSearchResultMore;
 
   SearchWrapper(
-      {required this.searchKeyWord,
-      required this.searchResult,
-      required this.showSearchResultMore});
+      {required this.searchResult, required this.showSearchResultMore});
 }
 
 class DataItem {
@@ -295,4 +320,22 @@ class DataItem {
   final String subtitle;
 
   DataItem({this.id, required this.title, required this.subtitle});
+}
+
+class KeyWord {
+  final String name;
+  final String label;
+  final dynamic hiddenValue;
+  final String showedValue;
+
+  KeyWord(
+      {required this.name,
+      required this.label,
+      required this.hiddenValue,
+      required this.showedValue});
+
+  @override
+  String toString() {
+    return '$label: $showedValue';
+  }
 }

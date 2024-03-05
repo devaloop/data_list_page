@@ -41,12 +41,29 @@ class MyApp extends StatelessWidget {
         }),
         search: Future(() async {
           await Future.delayed(const Duration(seconds: 10));
-          return SearchWrapper(
-            searchKeyWord: 'Data 1',
-            searchResult: Wrapper(total: 20, data: db.take(10).toList()),
-            showSearchResultMore: (wrapper) =>
-                Future(() => Wrapper(total: 20, data: db.take(20).toList())),
-          );
+          var searchKeyWord = [
+            KeyWord(
+              name: 'name',
+              label: 'Name',
+              hiddenValue: 'Data',
+              showedValue: 'Data',
+            ),
+            KeyWord(
+              name: 'detail',
+              label: 'Detail',
+              hiddenValue: 'Data',
+              showedValue: 'Data',
+            ),
+          ];
+          return MapEntry(
+              searchKeyWord,
+              SearchWrapper(
+                searchResult: Wrapper(total: 20, data: db.take(10).toList()),
+                showSearchResultMore: (wrapper, searchKeyWord) => Future(() {
+                  return MapEntry(searchKeyWord,
+                      Wrapper(total: 20, data: db.take(20).toList()));
+                }),
+              ));
         }),
         refresh: Future(() async {
           await Future.delayed(const Duration(seconds: 10));

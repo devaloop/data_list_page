@@ -1,39 +1,80 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
-
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
-
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
 ```dart
-const like = 'sample';
+import 'package:devaloop_data_list_page/data_list_page.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<DataItem> db = List.generate(
+        25,
+        (index) => DataItem(
+            title: 'Data ${index + 1}', subtitle: 'Data ${index + 1}'));
+
+    return MaterialApp(
+      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: DataListPage(
+        title: 'Product Inventory',
+        subtitle: 'Product Inventory',
+        wrapper: Future(() async {
+          await Future.delayed(const Duration(seconds: 2));
+          return Wrapper(total: db.length, data: db.take(10).toList());
+        }),
+        showMore: (wrapper) => Future<Wrapper>(() async {
+          await Future.delayed(const Duration(seconds: 2));
+          return Wrapper(
+              total: db.length,
+              data: db.take(wrapper.data.length + 10).toList());
+        }),
+        add: Future(() async {
+          await Future.delayed(const Duration(seconds: 10));
+          return Wrapper(total: db.length, data: db.take(10).toList());
+        }),
+        search: Future(() async {
+          await Future.delayed(const Duration(seconds: 10));
+          var searchKeyWord = [
+            KeyWord(
+              name: 'name',
+              label: 'Name',
+              hiddenValue: 'Data',
+              showedValue: 'Data',
+            ),
+            KeyWord(
+              name: 'detail',
+              label: 'Detail',
+              hiddenValue: 'Data',
+              showedValue: 'Data',
+            ),
+          ];
+          return MapEntry(
+              searchKeyWord,
+              SearchWrapper(
+                searchResult: Wrapper(total: 20, data: db.take(10).toList()),
+                showSearchResultMore: (wrapper, searchKeyWord) => Future(() {
+                  return MapEntry(searchKeyWord,
+                      Wrapper(total: 20, data: db.take(20).toList()));
+                }),
+              ));
+        }),
+        refresh: Future(() async {
+          await Future.delayed(const Duration(seconds: 10));
+          return Wrapper(total: db.length, data: db.take(10).toList());
+        }),
+      ),
+    );
+  }
+}
 ```
-
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.

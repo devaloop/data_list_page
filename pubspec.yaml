@@ -1,7 +1,7 @@
 name: devaloop_data_list_page
 description: "A Flutter Data List Page package project."
 version: 0.0.1
-homepage:
+homepage: https://github.com/devaloop/data_list_page
 
 environment:
   sdk: '>=3.2.6 <4.0.0'
