@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       home: DataListPage(
         title: 'Product Inventory',
         subtitle: 'Product Inventory',
-        wrapper: Future(() async {
+        initial: () => Future(() async {
           await Future.delayed(const Duration(seconds: 2));
           return Wrapper(total: db.length, data: db.take(10).toList());
         }),
@@ -35,11 +35,11 @@ class MyApp extends StatelessWidget {
               total: db.length,
               data: db.take(wrapper.data.length + 10).toList());
         }),
-        add: Future(() async {
+        add: (context) => Future(() async {
           await Future.delayed(const Duration(seconds: 10));
-          return Wrapper(total: db.length, data: db.take(10).toList());
+          return IsAdded.yes;
         }),
-        search: Future(() async {
+        search: (context) => Future(() async {
           await Future.delayed(const Duration(seconds: 10));
           var searchKeyWord = [
             KeyWord(
@@ -64,10 +64,6 @@ class MyApp extends StatelessWidget {
                       Wrapper(total: 20, data: db.take(20).toList()));
                 }),
               ));
-        }),
-        refresh: Future(() async {
-          await Future.delayed(const Duration(seconds: 10));
-          return Wrapper(total: db.length, data: db.take(10).toList());
         }),
       ),
     );

@@ -5,26 +5,28 @@ import 'package:flutter/material.dart';
 class DataListPage extends StatelessWidget {
   final String title;
   final String subtitle;
-  final Future<Wrapper> wrapper;
-  final Future<Wrapper>? add;
-  final Future<MapEntry<List<KeyWord>, SearchWrapper>>? search;
-  final Future<Wrapper>? refresh;
+  final Future<Wrapper> Function() initial;
+  final Future<IsAdded> Function(BuildContext context)? add;
+  final Future<IsUpdatedOrDeleted> Function(BuildContext context, dynamic id)?
+      detail;
+  final Future<MapEntry<List<KeyWord>, SearchWrapper>?> Function(
+      BuildContext context)? search;
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
   const DataListPage(
       {super.key,
       required this.title,
       required this.subtitle,
-      required this.wrapper,
+      required this.initial,
       this.add,
       this.search,
-      this.refresh,
-      this.showMore});
+      this.showMore,
+      this.detail});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: wrapper,
+        future: initial.call(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting ||
               snapshot.hasError) {
@@ -49,10 +51,11 @@ class DataListPage extends StatelessWidget {
             return DataListPageShow(
               title: title,
               subtitle: subtitle,
-              wrapper: snapshot.data!,
+              initial: () => snapshot.data!,
               showMore: showMore,
-              refresh: refresh,
+              refresh: initial,
               add: add,
+              detail: detail,
               search: search,
             );
           }
@@ -63,21 +66,25 @@ class DataListPage extends StatelessWidget {
 class DataListPageShow extends StatefulWidget {
   final String title;
   final String subtitle;
-  final Wrapper wrapper;
-  final Future<Wrapper>? add;
-  final Future<MapEntry<List<KeyWord>, SearchWrapper>>? search;
-  final Future<Wrapper>? refresh;
+  final Wrapper Function() initial;
+  final Future<IsAdded> Function(BuildContext context)? add;
+  final Future<IsUpdatedOrDeleted> Function(BuildContext context, dynamic id)?
+      detail;
+  final Future<MapEntry<List<KeyWord>, SearchWrapper>?> Function(
+      BuildContext context)? search;
+  final Future<Wrapper> Function()? refresh;
   final Future<Wrapper> Function(Wrapper wrapper)? showMore;
 
   const DataListPageShow(
       {super.key,
       required this.title,
       required this.subtitle,
-      required this.wrapper,
+      required this.initial,
       this.add,
       this.search,
       this.refresh,
-      this.showMore});
+      this.showMore,
+      this.detail});
 
   @override
   State<DataListPageShow> createState() => _DataListPageShowState();
@@ -102,7 +109,7 @@ class _DataListPageShowState extends State<DataListPageShow> {
     _isAdding = false;
     _isSearchClearing = false;
     _searchKeyWord = [];
-    _wrapper = widget.wrapper;
+    _wrapper = widget.initial.call();
   }
 
   @override
@@ -132,7 +139,7 @@ class _DataListPageShowState extends State<DataListPageShow> {
                       setState(() {
                         _isRefreshing = true;
                       });
-                      _wrapper = await widget.refresh!;
+                      _wrapper = await widget.refresh!.call();
                       _searchWrapper = null;
                       _searchKeyWord = [];
                       setState(() {
@@ -156,10 +163,12 @@ class _DataListPageShowState extends State<DataListPageShow> {
                 setState(() {
                   _isSearchring = true;
                 });
-                var search = await widget.search!;
-                _searchWrapper = search.value;
-                _searchKeyWord = search.key;
-                _wrapper = _searchWrapper!.searchResult;
+                var search = await widget.search!.call(context);
+                if (search != null) {
+                  _searchWrapper = search.value;
+                  _searchKeyWord = search.key;
+                  _wrapper = _searchWrapper!.searchResult;
+                }
                 setState(() {
                   _isSearchring = false;
                 });
@@ -183,7 +192,10 @@ class _DataListPageShowState extends State<DataListPageShow> {
                 setState(() {
                   _isAdding = true;
                 });
-                _wrapper = await widget.add!;
+                var isAdded = await widget.add!.call(context);
+                if (isAdded == IsAdded.yes) {
+                  _wrapper = await widget.refresh!.call();
+                }
                 setState(() {
                   _isAdding = false;
                 });
@@ -213,7 +225,7 @@ class _DataListPageShowState extends State<DataListPageShow> {
                     setState(() {
                       _isSearchClearing = true;
                     });
-                    _wrapper = await widget.refresh!;
+                    _wrapper = await widget.refresh!.call();
                     _searchWrapper = null;
                     _searchKeyWord = [];
                     setState(() {
@@ -231,67 +243,105 @@ class _DataListPageShowState extends State<DataListPageShow> {
                         )
                       : const Icon(Icons.clear)),
             ),
-          Flexible(
-            child: ListView.separated(
-              itemBuilder: (context, index) => _wrapper.data.length !=
-                          _wrapper.total &&
-                      index ==
-                          (_wrapper.data.length +
-                              (_wrapper.data.length != _wrapper.total ? 1 : 0) -
-                              1)
-                  ? Padding(
-                      padding: const EdgeInsets.all(15),
-                      child: Center(
-                        child: FilledButton.icon(
-                          onPressed: _isShowingMore
-                              ? null
-                              : () async {
-                                  setState(() {
-                                    _isShowingMore = true;
-                                  });
-                                  if (_searchWrapper != null) {
-                                    var searchWrapper = await _searchWrapper!
-                                        .showSearchResultMore!
-                                        .call(_wrapper, _searchKeyWord);
-                                    _wrapper = searchWrapper.value;
-                                    _searchKeyWord = searchWrapper.key;
-                                  } else {
-                                    _wrapper =
-                                        await widget.showMore!.call(_wrapper);
-                                  }
-                                  setState(() {
-                                    _isShowingMore = false;
-                                  });
-                                },
-                          icon: _isShowingMore
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.grey,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : const Icon(Icons.arrow_circle_down),
-                          label: Text(
-                              'SHOW MORE (${_wrapper.total - _wrapper.data.length})'),
+          _wrapper.data.isEmpty
+              ? Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.info),
+                        const SizedBox(
+                          height: 15,
                         ),
-                      ),
-                    )
-                  : Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.more_vert),
-                        title: Text(_wrapper.data[index].title),
-                        subtitle: Text(_wrapper.data[index].subtitle),
-                      ),
+                        Text(_searchKeyWord.isEmpty
+                            ? 'There is no data yet.'
+                            : 'No data found.'),
+                      ],
                     ),
-              separatorBuilder: (context, index) => const SizedBox(
-                height: 7.5,
-              ),
-              itemCount: _wrapper.data.length +
-                  (_wrapper.data.length != _wrapper.total ? 1 : 0),
-            ),
-          ),
+                  ),
+                )
+              : Flexible(
+                  child: ListView.separated(
+                    itemBuilder: (context, index) => _wrapper.data.length !=
+                                _wrapper.total &&
+                            index ==
+                                (_wrapper.data.length +
+                                    (_wrapper.data.length != _wrapper.total
+                                        ? 1
+                                        : 0) -
+                                    1)
+                        ? Padding(
+                            padding: const EdgeInsets.all(15),
+                            child: Center(
+                              child: FilledButton.icon(
+                                onPressed: _isShowingMore
+                                    ? null
+                                    : () async {
+                                        setState(() {
+                                          _isShowingMore = true;
+                                        });
+                                        if (_searchWrapper != null) {
+                                          var searchWrapper =
+                                              await _searchWrapper!
+                                                  .showSearchResultMore!
+                                                  .call(
+                                                      _wrapper, _searchKeyWord);
+                                          _wrapper = searchWrapper.value;
+                                          _searchKeyWord = searchWrapper.key;
+                                        } else {
+                                          _wrapper = await widget.showMore!
+                                              .call(_wrapper);
+                                        }
+                                        setState(() {
+                                          _isShowingMore = false;
+                                        });
+                                      },
+                                icon: _isShowingMore
+                                    ? const SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.grey,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                    : const Icon(Icons.arrow_circle_down),
+                                label: Text(
+                                    'SHOW MORE (${_wrapper.total - _wrapper.data.length})'),
+                              ),
+                            ),
+                          )
+                        : Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.more_vert),
+                              title: Text(_wrapper.data[index].title),
+                              subtitle: Text(_wrapper.data[index].subtitle),
+                              onTap: widget.detail == null
+                                  ? null
+                                  : () async {
+                                      var result = await widget.detail!.call(
+                                          context, _wrapper.data[index].id);
+                                      if (result == IsUpdatedOrDeleted.yes) {
+                                        setState(() {
+                                          _isRefreshing = true;
+                                        });
+                                        _wrapper = await widget.refresh!.call();
+                                        _searchWrapper = null;
+                                        _searchKeyWord = [];
+                                        setState(() {
+                                          _isRefreshing = false;
+                                        });
+                                      }
+                                    },
+                            ),
+                          ),
+                    separatorBuilder: (context, index) => const SizedBox(
+                      height: 7.5,
+                    ),
+                    itemCount: _wrapper.data.length +
+                        (_wrapper.data.length != _wrapper.total ? 1 : 0),
+                  ),
+                ),
         ],
       ),
     );
@@ -338,4 +388,14 @@ class KeyWord {
   String toString() {
     return '$label: $showedValue';
   }
+}
+
+enum IsAdded {
+  yes,
+  no;
+}
+
+enum IsUpdatedOrDeleted {
+  yes,
+  no;
 }
