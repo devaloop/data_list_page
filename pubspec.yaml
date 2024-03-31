@@ -1,6 +1,6 @@
 name: devaloop_data_list_page
 description: "A Flutter Data List Page package project."
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/devaloop/data_list_page
 
 environment:
@@ -14,7 +14,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

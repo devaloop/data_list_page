@@ -13,7 +13,11 @@ class MyApp extends StatelessWidget {
     final List<DataItem> db = List.generate(
         25,
         (index) => DataItem(
-            title: 'Data ${index + 1}', subtitle: 'Data ${index + 1}'));
+            title: 'Data ${index + 1}',
+            subtitle: Future(() async {
+              await Future.delayed(const Duration(seconds: 2));
+              return 'Data ${index + 1}';
+            })));
 
     return MaterialApp(
       title: 'Flutter Demo',

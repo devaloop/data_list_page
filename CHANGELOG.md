@@ -1,3 +1,3 @@
-## 0.0.2
+## 0.0.3
 
-* New scheme: Initial, Add, ShowMore & Detail Properties.
+* DataItem subtitle as Future
