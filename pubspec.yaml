@@ -1,6 +1,6 @@
 name: devaloop_data_list_page
 description: "A Flutter Data List Page package project."
-version: 0.0.3
+version: 0.0.4
 homepage: https://github.com/devaloop/data_list_page
 
 environment:

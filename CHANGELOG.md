@@ -1,3 +1,3 @@
-## 0.0.3
+## 0.0.4
 
-* DataItem subtitle as Future
+* add footNotes

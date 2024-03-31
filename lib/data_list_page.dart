@@ -315,17 +315,32 @@ class _DataListPageShowState extends State<DataListPageShow> {
                             child: ListTile(
                               leading: const Icon(Icons.more_vert),
                               title: Text(_wrapper.data[index].title),
-                              subtitle: FutureBuilder(
-                                future: _wrapper.data[index].subtitle,
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                          ConnectionState.waiting ||
-                                      snapshot.hasError) {
-                                    return const LinearProgressIndicator();
-                                  } else {
-                                    return Text(snapshot.data!);
-                                  }
-                                },
+                              subtitle: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FutureBuilder(
+                                    future: _wrapper.data[index].subtitle,
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                              ConnectionState.waiting ||
+                                          snapshot.hasError) {
+                                        return const LinearProgressIndicator();
+                                      } else {
+                                        return Text(snapshot.data!);
+                                      }
+                                    },
+                                  ),
+                                  if (_wrapper.data[index].footNotes != null)
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        _wrapper.data[index].footNotes!,
+                                        style: const TextStyle(
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    )
+                                ],
                               ),
                               onTap: widget.detail == null
                                   ? null
