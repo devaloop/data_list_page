@@ -326,7 +326,10 @@ class _DataListPageShowState extends State<DataListPageShow> {
                                           snapshot.hasError) {
                                         return const LinearProgressIndicator();
                                       } else {
-                                        return Text(snapshot.data!);
+                                        return Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(snapshot.data!),
+                                        );
                                       }
                                     },
                                   ),
